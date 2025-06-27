@@ -1,11 +1,19 @@
 # fraunhofer_app.py
 
+import streamlit as st
+import numpy as np
+import matplotlib.pyplot as plt
+
+st.set_page_config(page_title="Simulador de Difracción", layout="wide")
+st.title("🌈 Simulador de Difracción de Fraunhofer")
+
+# 🟡 Este bloque debe ir ANTES del if
+modo = st.radio("Selecciona el modo de visualización:",
+                ["Difracción 1D (rendijas)", "Difracción 2D (apertura rectangular)"])
+
+# 🟢 Aquí ya puedes usar "modo"
 if modo == "Difracción 1D (rendijas)":
-
-    import streamlit as st
-    import numpy as np
-    import matplotlib.pyplot as plt
-
+    st.subheader("Simulación 1D de rendijas múltiples")
     st.set_page_config(page_title="Simulador de Difracción de Fraunhofer", layout="wide")
 
     st.title("🔭 Simulador de Difracción de Fraunhofer - Múltiples Rendijas")
@@ -63,6 +71,7 @@ if modo == "Difracción 1D (rendijas)":
     st.pyplot(fig)
 
 elif modo == "Difracción 2D (apertura rectangular)":
+    st.subheader("Simulación 2D de apertura rectangular")
     wavelength = st.slider("Longitud de onda (nm)", 400, 700, 633) * 1e-9
     L = st.slider("Distancia a la pantalla (cm)", 10, 200, 100) / 100
     apertura_x = st.slider("Ancho de apertura en X (µm)", 10, 200, 100) * 1e-6
