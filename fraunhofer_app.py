@@ -60,60 +60,41 @@ ax.legend()
 
 st.pyplot(fig)
 
-col1, col2 = st.columns(2)
+import numpy as np
+import matplotlib.pyplot as plt
+import streamlit as st
 
-with col1:
-    N = st.slider("Número de rendijas (N)", 1, 10, 4)
-    a_um = st.slider("Separación entre rendijas a (µm)", 5.0, 50.0, 10.0, step=1.0)
-    b_um = st.slider("Ancho de rendijas b (µm)", 1.0, 20.0, 2.0, step=1.0)
+st.title("🔲 Difracción de Fraunhofer 2D - Apertura Rectangular")
 
-with col2:
-    wavelength_nm = st.slider("Longitud de onda λ (nm)", 400, 700, 633, step=10)
-    L_m = st.slider("Distancia a la pantalla (cm)", 10.0, 200.0, 100.0, step=10.0) / 100.0  # Convertir a metros
-    modo_pantalla = st.radio("Visualización del eje horizontal:", ["Ángulo (α/π)", "Pantalla real (mm)"])
+# Parámetros
+wavelength = st.slider("Longitud de onda (nm)", 400, 700, 633) * 1e-9
+L = st.slider("Distancia a la pantalla (cm)", 10, 200, 100) / 100  # metros
+apertura_x = st.slider("Ancho de apertura en X (µm)", 10, 200, 100) * 1e-6
+apertura_y = st.slider("Ancho de apertura en Y (µm)", 10, 200, 100) * 1e-6
 
-# ---------------- CONVERSIÓN DE UNIDADES ----------------
-wavelength = wavelength_nm * 1e-9
-a = a_um * 1e-6
-b = b_um * 1e-6
+# Dimensiones de la apertura
+N = 1024  # resolución
+dx = 2e-6  # resolución espacial en plano de la rendija
+x = np.linspace(-N/2, N/2, N) * dx
+X, Y = np.meshgrid(x, x)
 
-# Eje angular
-alpha = np.linspace(-6*np.pi, 6*np.pi, 5000)
-theta = (alpha / np.pi) * (wavelength / a)
+# Apertura rectangular
+apertura = np.where((np.abs(X) < apertura_x/2) & (np.abs(Y) < apertura_y/2), 1, 0)
 
-# Cálculo de posición real sobre la pantalla
-x = L_m * theta  # en metros
-x_mm = x * 1e3   # para graficar en mm
+# Campo difractado: Fraunhofer ≈ FT de la apertura
+campo = np.fft.fftshift(np.fft.fft2(apertura))
+intensidad = np.abs(campo)**2
+intensidad /= np.max(intensidad)  # Normalización
 
-# Cálculo de beta y gamma
-beta = (np.pi * b * theta) / wavelength
-gamma = (np.pi * a * theta) / wavelength
+# Tamaño del plano de observación
+fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
+x_observ = fx * wavelength * L  # conversión a coordenadas físicas
 
-beta[beta == 0] = 1e-20
-gamma[gamma == 0] = 1e-20
-
-I = (np.sin(beta) / beta)**2 * (np.sin(N * gamma) / np.sin(gamma))**2
-I = I / np.max(I)
-
-envelope = (np.sin(beta) / beta)**2
-envelope = envelope / np.max(envelope)
-
-# ---------------- GRAFICAR ----------------
-fig, ax = plt.subplots(figsize=(10, 5))
-
-if modo_pantalla == "Ángulo (α/π)":
-    eje_x = alpha / np.pi
-    label_x = r"$\alpha$ (rad) / $\pi$"
-else:
-    eje_x = x_mm
-    label_x = "Posición en la pantalla (mm)"
-
-ax.plot(eje_x, I * 16, 'r', label='Interferencia total')
-ax.plot(eje_x, envelope * 16, 'b--', label='Envolvente (una rendija)')
-ax.set_xlabel(label_x)
-ax.set_ylabel(r'$I / I_0$ (W/cm$^2$)')
-ax.set_title(f"N = {N} rendijas | a = {a_um:.1f} µm | b = {b_um:.1f} µm | λ = {wavelength_nm} nm | L = {L_m:.2f} m")
-ax.grid(True)
-ax.legend()
-
+# Mostrar imagen
+fig, ax = plt.subplots(figsize=(6, 6))
+extent = [x_observ[0]*1e3, x_observ[-1]*1e3, x_observ[0]*1e3, x_observ[-1]*1e3]
+ax.imshow(intensidad, cmap='gray', extent=extent)
+ax.set_xlabel("x (mm)")
+ax.set_ylabel("y (mm)")
+ax.set_title("Patrón de difracción 2D (Fraunhofer)")
 st.pyplot(fig)
