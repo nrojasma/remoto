@@ -54,9 +54,9 @@ if modo_dif == "Fraunhofer":
         st.pyplot(fig)
 
     elif modo_dim == "2D":
-        L = st.slider("Distancia a la pantalla (m)", 1.0, 10.0, 1.0, step=0.1)
-        N = 1024
-        dx = 1e-5  # tamaño del píxel en la apertura: 10 µm
+        L = st.slider("Distancia a la pantalla (m)", 1000, 10000, 100, step=1)/1000
+        dx = 1e-5  # 10 micras
+        N = 2048   # resolución
         x = np.linspace(-N/2, N/2, N) * dx
         X, Y = np.meshgrid(x, x)
 
@@ -65,7 +65,7 @@ if modo_dif == "Fraunhofer":
             apertura_y = st.slider("Ancho en Y (µm)", 10, 200, 100) * 1e-6
             apertura = np.where((np.abs(X) < apertura_x/2) & (np.abs(Y) < apertura_y/2), 1, 0)
         else:
-            radio = st.slider("Radio de apertura (m)", 0.0, 1.0, 0.01, step=0.01)
+            radio = st.slider("Radio de apertura (mm)", 0.1, 1.0, 0.5, step=0.01) * 1e-3
             apertura = np.where(X**2 + Y**2 < radio**2, 1, 0)
 
         campo = np.fft.fftshift(np.fft.fft2(apertura))
