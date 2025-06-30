@@ -76,15 +76,16 @@ if modo_dif == "Fraunhofer":
         x_obs = fx * wavelength * L
         mask = (np.abs(x_obs) <= 10e-3)
         recorte = np.ix_(mask, mask)
+
         intensidad = np.abs(campo)**2
         intensidad /= np.max(intensidad)
 
         fig, ax = plt.subplots(figsize=(6,6))
         extent = [x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3, x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3]
         ax.imshow(intensidad[recorte], cmap='gray', extent=extent)
-        ax.set_xlabel(\"x (mm)\")
-        ax.set_ylabel(\"y (mm)\")
-        ax.set_title(\"Patrón de difracción 2D (Fraunhofer)\")
+        ax.set_xlabel("x (mm)")
+        ax.set_ylabel("y (mm)")
+        ax.set_title("Patrón de difracción 2D (Fraunhofer)")
         st.pyplot(fig)
 
 # ------------------------ DIFRACCIÓN DE FRESNEL ------------------------
