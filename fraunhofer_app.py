@@ -17,7 +17,7 @@ if modo_dim == "2D":
 
 # ------------------------ PARÁMETROS COMUNES ------------------------
 wavelength = st.slider("Longitud de onda (nm)", 400, 700, 633) * 1e-9
-L = st.slider("Distancia a la pantalla (cm)", 10, 200, 100) / 100
+L = st.slider("Distancia a la pantalla (m)", 0.01, 1.0, 0.1, step=0.01)
 
 # ------------------------ DIFRACCIÓN DE FRAUNHOFER ------------------------
 if modo_dif == "Fraunhofer":
@@ -138,4 +138,3 @@ elif modo_dif == "Fresnel":
         ax.set_ylabel("y (mm)")
         ax.set_title("Patrón de difracción 2D (Fresnel)")
         st.pyplot(fig)
-
