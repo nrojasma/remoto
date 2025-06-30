@@ -54,8 +54,8 @@ if modo_dif == "Fraunhofer":
         st.pyplot(fig)
 
     elif modo_dim == "2D":
-        L = st.slider("Distancia a la pantalla (m)", 1000, 10000, 100, step=1)/1000
-        dx = 1e-5  # 10 micras
+        L = st.slider("Distancia a la pantalla (mm)", 3000, 5000, 3951, step=1) / 1000  # convierte a metros
+        dx = 5e-6  # 10 micras
         N = 2048   # resolución
         x = np.linspace(-N/2, N/2, N) * dx
         X, Y = np.meshgrid(x, x)
@@ -74,17 +74,17 @@ if modo_dif == "Fraunhofer":
 
         fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
         x_obs = fx * wavelength * L
-
-        # Limitar la imagen a 20 mm x 20 mm
         mask = (np.abs(x_obs) <= 10e-3)
         recorte = np.ix_(mask, mask)
+        intensidad = np.abs(campo)**2
+        intensidad /= np.max(intensidad)
 
         fig, ax = plt.subplots(figsize=(6,6))
         extent = [x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3, x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3]
         ax.imshow(intensidad[recorte], cmap='gray', extent=extent)
-        ax.set_xlabel("x (mm)")
-        ax.set_ylabel("y (mm)")
-        ax.set_title("Patrón de difracción 2D (Fraunhofer)")
+        ax.set_xlabel(\"x (mm)\")
+        ax.set_ylabel(\"y (mm)\")
+        ax.set_title(\"Patrón de difracción 2D (Fraunhofer)\")
         st.pyplot(fig)
 
 # ------------------------ DIFRACCIÓN DE FRESNEL ------------------------
