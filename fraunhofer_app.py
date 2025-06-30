@@ -115,7 +115,7 @@ elif modo_dif == "Fresnel":
             apertura_y = st.slider("Ancho en Y (µm)", 10, 200, 100) * 1e-6
             apertura = np.where((np.abs(X) < apertura_x/2) & (np.abs(Y) < apertura_y/2), 1, 0)
         else:
-            radio = st.slider("Radio de apertura (m)", 0.001, 1.0, 0.01, step=0.001)
+            radio = st.slider("Radio de apertura (m)", 0.0001, 0.01, 0.002, step=0.0001)
             apertura = np.where(R2 < radio**2, 1, 0)
 
         # Fresnel integral kernel
