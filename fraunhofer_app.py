@@ -134,7 +134,6 @@ elif modo_dif == "Fresnel":
 
         fig, ax = plt.subplots(figsize=(6,6))
         ax.imshow(intensidad, cmap='gray', extent=extent)
-        ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
         ax.set_xlabel("x (mm)")
         ax.set_ylabel("y (mm)")
         ax.set_title("Patrón de difracción 2D (Fresnel)")
