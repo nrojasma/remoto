@@ -17,13 +17,13 @@ if modo_dim == "2D":
 
 # ------------------------ PARÁMETROS COMUNES ------------------------
 wavelength = st.slider("Longitud de onda (nm)", 400, 700, 633) * 1e-9
-L = st.slider("Distancia a la pantalla (m)", 0.01, 1.0, 0.1, step=0.01)
 
 # ------------------------ DIFRACCIÓN DE FRAUNHOFER ------------------------
 if modo_dif == "Fraunhofer":
     st.subheader("Difracción de Fraunhofer")
 
     if modo_dim == "1D":
+        L = st.slider("Distancia a la pantalla (m)", 1.0, 10.0, 1.0, step=0.1)
         N = st.slider("Número de rendijas", 1, 10, 4)
         a_um = st.slider("Separación entre rendijas a (µm)", 5, 50, 10)
         b_um = st.slider("Ancho de rendija b (µm)", 1, 20, 2)
@@ -54,8 +54,9 @@ if modo_dif == "Fraunhofer":
         st.pyplot(fig)
 
     elif modo_dim == "2D":
+        L = st.slider("Distancia a la pantalla (m)", 1.0, 10.0, 1.0, step=0.1)
         N = 1024
-        dx = 2e-6
+        dx = 1e-5  # tamaño del píxel en la apertura: 10 µm
         x = np.linspace(-N/2, N/2, N) * dx
         X, Y = np.meshgrid(x, x)
 
@@ -64,7 +65,7 @@ if modo_dif == "Fraunhofer":
             apertura_y = st.slider("Ancho en Y (µm)", 10, 200, 100) * 1e-6
             apertura = np.where((np.abs(X) < apertura_x/2) & (np.abs(Y) < apertura_y/2), 1, 0)
         else:
-            radio = st.slider("Radio de apertura (µm)", 10, 200, 50) * 1e-6
+            radio = st.slider("Radio de apertura (m)", 0.0, 1.0, 0.01, step=0.01)
             apertura = np.where(X**2 + Y**2 < radio**2, 1, 0)
 
         campo = np.fft.fftshift(np.fft.fft2(apertura))
@@ -73,10 +74,14 @@ if modo_dif == "Fraunhofer":
 
         fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
         x_obs = fx * wavelength * L
-        extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
+
+        # Limitar la imagen a 20 mm x 20 mm
+        mask = (np.abs(x_obs) <= 10e-3)
+        recorte = np.ix_(mask, mask)
 
         fig, ax = plt.subplots(figsize=(6,6))
-        ax.imshow(intensidad, cmap='gray', extent=extent)
+        extent = [x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3, x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3]
+        ax.imshow(intensidad[recorte], cmap='gray', extent=extent)
         ax.set_xlabel("x (mm)")
         ax.set_ylabel("y (mm)")
         ax.set_title("Patrón de difracción 2D (Fraunhofer)")
@@ -85,6 +90,8 @@ if modo_dif == "Fraunhofer":
 # ------------------------ DIFRACCIÓN DE FRESNEL ------------------------
 elif modo_dif == "Fresnel":
     st.subheader("Difracción de Fresnel")
+
+    L = st.slider("Distancia a la pantalla (m)", 0.01, 1.0, 0.1, step=0.01)
 
     if modo_dim == "1D":
         b_um = st.slider("Ancho de rendija b (µm)", 10, 200, 50)
@@ -115,10 +122,9 @@ elif modo_dif == "Fresnel":
             apertura_y = st.slider("Ancho en Y (µm)", 10, 200, 100) * 1e-6
             apertura = np.where((np.abs(X) < apertura_x/2) & (np.abs(Y) < apertura_y/2), 1, 0)
         else:
-            radio = st.slider("Radio de apertura (m)", 0.0001, 0.01, 0.002, step=0.0001)
+            radio = st.slider("Radio de apertura (m)", 0.001, 1.0, 0.01, step=0.001)
             apertura = np.where(R2 < radio**2, 1, 0)
 
-        # Fresnel integral kernel
         k = 2 * np.pi / wavelength
         r = np.sqrt(R2 + L**2)
         kernel = np.exp(1j * k * r) / r
