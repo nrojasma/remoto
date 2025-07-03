@@ -3,14 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import fresnel
 
-st.set_page_config(page_title="Simulador de Difracción", layout="wide")
-st.title("🔬 Simulador de Difracción y Calculadora de Fresnel")
+st.set_page_config(page_title="Calculadora coeficientes de fresnel y difraccion", layout="wide")
+st.title("Calculadora de Fresnel y Simulador de Difracción")
 
-# ------------------------ MODO PRINCIPAL ------------------------
-modo_principal = st.radio("¿Qué deseas hacer?", ["Calculadora de Coeficientes de Fresnel", "Simulación de Difracción"], horizontal=True)
+# ------------------------ PAGINA PRINCIPAL ------------------------
+modo_principal = st.radio("Elije la opcion que deseas realizar", ["Calculadora de Coeficientes de Fresnel", "Simulación de Difracción"], horizontal=True)
 
 if modo_principal == "Calculadora de Coeficientes de Fresnel":
-    st.subheader("🔍 Calculadora de Coeficientes de Fresnel")
+    st.subheader("Calculadora de Coeficientes de Fresnel")
 
     n1 = st.number_input("Índice de refracción del medio 1 (n₁)", min_value=0.0, value=1.0, step=0.01)
     n2 = st.number_input("Índice de refracción del medio 2 (n₂)", min_value=0.0, value=1.5, step=0.01)
@@ -46,10 +46,11 @@ if modo_principal == "Calculadora de Coeficientes de Fresnel":
         st.error("Condición de incidencia total interna: no hay transmisión.")
 
 elif modo_principal == "Simulación de Difracción":
-    # ------------------------ SELECCIONES PRINCIPALES ------------------------
+    # ------------------------ ELECCION GENERAL ------------------------
     modo_dif = st.radio("Selecciona el tipo de difracción:", ["Fraunhofer", "Fresnel"], horizontal=True)
     modo_dim = st.radio("Selecciona la visualización:", ["1D", "2D"], horizontal=True)
 
+    # ------------------------ ELECCION SECUNDARIA ------------------------
     if modo_dim == "2D":
         tipo_apertura = st.radio("Tipo de apertura para difracción 2D:", ["Rectangular", "Circular"], horizontal=True)
 
