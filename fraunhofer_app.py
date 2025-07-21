@@ -102,26 +102,58 @@ elif modo_principal == "Simulación de Difracción":
                 apertura_x = st.slider("Ancho en X (µm)", 10, 200, 100) * 1e-6
                 apertura_y = st.slider("Ancho en Y (µm)", 10, 200, 100) * 1e-6
                 apertura = np.where((np.abs(X) < apertura_x/2) & (np.abs(Y) < apertura_y/2), 1, 0)
+
+                campo = np.fft.fftshift(np.fft.fft2(apertura))
+                intensidad = np.abs(campo)**2
+                intensidad /= np.max(intensidad)
+
+                fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
+                x_obs = fx * wavelength * L
+                mask = (np.abs(x_obs) <= 10e-3)
+                recorte = np.ix_(mask, mask)
+                extent = [x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3, x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3]
+
+                fig, ax = plt.subplots(figsize=(6,6))
+                ax.imshow(intensidad[recorte], cmap='gray', extent=extent)
+                ax.set_xlabel("x (mm)")
+                ax.set_ylabel("y (mm)")
+                ax.set_title("Patrón de difracción 2D (Fraunhofer)")
+                st.pyplot(fig)
             else:
+                st.subheader("Difracción de Fraunhofer 2D - Apertura Circular (Optimizada)")
+
+                # Parámetros principales
+                L = st.slider("Distancia a la pantalla (mm)", 50, 500, 200, step=1) / 1000  # metros
                 radio = st.slider("Radio de apertura (mm)", 0.1, 1.0, 0.5, step=0.01) * 1e-3
+
+                # Configuración espacial
+                N = 2048
+                dx = 5e-6  # 5 micras/píxel
+                x = np.linspace(-N/2, N/2, N) * dx
+                X, Y = np.meshgrid(x, x)
+
+                # Apertura circular
                 apertura = np.where(X**2 + Y**2 < radio**2, 1, 0)
 
-            campo = np.fft.fftshift(np.fft.fft2(apertura))
-            intensidad = np.abs(campo)**2
-            intensidad /= np.max(intensidad)
+                # Cálculo Fraunhofer (FFT)
+                campo = np.fft.fftshift(np.fft.fft2(apertura))
+                intensidad = np.abs(campo)**2
+                intensidad /= np.max(intensidad)
 
-            fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
-            x_obs = fx * wavelength * L
-            mask = (np.abs(x_obs) <= 10e-3)
-            recorte = np.ix_(mask, mask)
-            extent = [x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3, x_obs[mask][0]*1e3, x_obs[mask][-1]*1e3]
+                # Ejes reales en milímetros
+                fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
+                x_obs = fx * wavelength * L
+                extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
 
-            fig, ax = plt.subplots(figsize=(6,6))
-            ax.imshow(intensidad[recorte], cmap='gray', extent=extent)
-            ax.set_xlabel("x (mm)")
-            ax.set_ylabel("y (mm)")
-            ax.set_title("Patrón de difracción 2D (Fraunhofer)")
-            st.pyplot(fig)
+                # Gráfica
+                fig, ax = plt.subplots(figsize=(6,6))
+                ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
+                ax.set_xlabel("x (mm)")
+                ax.set_ylabel("y (mm)")
+                ax.set_title("Patrón de difracción 2D (Fraunhofer)")
+                st.pyplot(fig)
+
+            
 
     # ------------------------ DIFRACCIÓN DE FRESNEL ------------------------
     elif modo_dif == "Fresnel":
