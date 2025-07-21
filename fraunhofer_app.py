@@ -177,7 +177,7 @@ elif modo_principal == "Simulación de Difracción":
             st.pyplot(fig)
 
         elif modo_dim == "2D":
-            N = 1024
+            N = 2048  # Mejor resolución
             dx = 2e-6
             x = np.linspace(-N/2, N/2, N) * dx
             X, Y = np.meshgrid(x, x)
@@ -188,7 +188,7 @@ elif modo_principal == "Simulación de Difracción":
                 apertura_y = st.slider("Ancho en Y (µm)", 10, 200, 100) * 1e-6
                 apertura = np.where((np.abs(X) < apertura_x/2) & (np.abs(Y) < apertura_y/2), 1, 0)
             else:
-                radio = st.slider("Radio de apertura (m)", 0.001, 1.0, 0.01, step=0.001)
+                radio = st.slider("Radio de apertura (mm)", 0.1, 1.0, 0.5, step=0.01) * 1e-3
                 apertura = np.where(R2 < radio**2, 1, 0)
 
             k = 2 * np.pi / wavelength
@@ -205,8 +205,9 @@ elif modo_principal == "Simulación de Difracción":
             extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
 
             fig, ax = plt.subplots(figsize=(6,6))
-            ax.imshow(intensidad, cmap='gray', extent=extent)
+            ax.imshow(intensidad, cmap='inferno', extent=extent, vmin=0, vmax=0.1)
             ax.set_xlabel("x (mm)")
             ax.set_ylabel("y (mm)")
             ax.set_title("Patrón de difracción 2D (Fresnel)")
             st.pyplot(fig)
+
