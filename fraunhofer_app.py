@@ -93,7 +93,7 @@ elif modo_principal == "Simulación de Difracción":
             st.pyplot(fig)
 
         elif modo_dim == "2D":
-             N = 2048  # Aumentar resolución
+            N = 2048  # Aumentar resolución
             dx = 2e-6  # Mejorar detalle espacial
             x = np.linspace(-N/2, N/2, N) * dx
             X, Y = np.meshgrid(x, x)
