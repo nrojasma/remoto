@@ -56,31 +56,31 @@ elif modo_principal == "Simulación de Difracción":
     X, Y = np.meshgrid(x, x)
     R2 = X**2 + Y**2
 
+    if tipo_apertura == "Rectangular":
+        lado_x_mm = st.slider("Lado en X (mm)", 0.1, 10.0, 1.0, step=0.1)
+        lado_y_mm = st.slider("Lado en Y (mm)", 0.1, 10.0, 4.0, step=0.1)
+        lado_x = lado_x_mm * 1e-3
+        lado_y = lado_y_mm * 1e-3
+        apertura = np.where((np.abs(X) <= lado_x/2) & (np.abs(Y) <= lado_y/2), 1, 0)
+    else:
+        radio = st.slider("Radio de apertura (mm)", 0.1, 5.0, 0.5, step=0.1) * 1e-3
+        apertura = np.where(R2 < radio**2, 1, 0)
+
     # ------------------ DIFRACCIÓN DE FRAUNHOFER ------------------
     if modo_dif == "Fraunhofer":
         st.subheader("Difracción de Fraunhofer 2D")
-        
-        if tipo_apertura == "Rectangular":
-            lado_x_mm = st.slider("Lado en X (mm)", 0.1, 10.0, 1.0, step=0.1)
-            lado_y_mm = st.slider("Lado en Y (mm)", 0.1, 10.0, 4.0, step=0.1)
-            lado_x = lado_x_mm * 1e-3
-            lado_y = lado_y_mm * 1e-3
-            apertura = np.where((np.abs(X) <= lado_x/2) & (np.abs(Y) <= lado_y/2), 1, 0)
-        else:
-            radio = st.slider("Radio de apertura (mm)", 0.1, 5.0, 0.5, step=0.1) * 1e-3
-            apertura = np.where(R2 < radio**2, 1, 0)
 
         campo = np.fft.fftshift(np.fft.fft2(apertura))
         intensidad = np.abs(campo)**2
         intensidad /= np.max(intensidad)
-        intensidad_log = np.log10(intensidad + 1e-6)
+        intensidad = np.sqrt(intensidad)  # Atenuar máximos alejados mediante función raíz cuadrada
 
         fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
         x_obs = fx * wavelength * L
         extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
 
         fig, ax = plt.subplots(figsize=(6,6))
-        ax.imshow(intensidad_log, cmap='inferno', extent=extent)
+        ax.imshow(intensidad, cmap='inferno', extent=extent, vmin=0, vmax=0.1)
         ax.set_xlabel("x (mm)")
         ax.set_ylabel("y (mm)")
         ax.set_title("Patrón de difracción 2D (Fraunhofer)")
@@ -91,29 +91,18 @@ elif modo_principal == "Simulación de Difracción":
         st.subheader("Difracción de Fresnel 2D")
 
         fase_cuadratica = np.exp(1j * (np.pi / (wavelength * L)) * (X**2 + Y**2))
-
-        if tipo_apertura == "Rectangular":
-            lado_x_mm = st.slider("Lado en X (mm)", 0.1, 10.0, 1.0, step=0.1)
-            lado_y_mm = st.slider("Lado en Y (mm)", 0.1, 10.0, 4.0, step=0.1)
-            lado_x = lado_x_mm * 1e-3
-            lado_y = lado_y_mm * 1e-3
-            apertura = np.where((np.abs(X) <= lado_x/2) & (np.abs(Y) <= lado_y/2), 1, 0)
-        else:
-            radio = st.slider("Radio de apertura (mm)", 0.1, 5.0, 0.5, step=0.1) * 1e-3
-            apertura = np.where(R2 < radio**2, 1, 0)
-
         campo = apertura * fase_cuadratica
         U = np.fft.fftshift(np.fft.fft2(campo))
         intensidad = np.abs(U)**2
         intensidad /= np.max(intensidad)
-        intensidad_log = np.log10(intensidad + 1e-6)
+        intensidad = np.sqrt(intensidad)  # Atenuar máximos alejados mediante función raíz cuadrada
 
         fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
         x_obs = fx * wavelength * L
         extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
 
         fig, ax = plt.subplots(figsize=(6,6))
-        ax.imshow(intensidad_log, cmap='gray', extent=extent)
+        ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
         ax.set_xlabel("x (mm)")
         ax.set_ylabel("y (mm)")
         ax.set_title("Patrón de difracción 2D (Fresnel)")
