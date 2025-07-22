@@ -73,11 +73,11 @@ elif modo_principal == "Simulación de Difracción":
         campo = np.fft.fftshift(np.fft.fft2(apertura))
         intensidad = np.abs(campo)**2
         intensidad /= np.max(intensidad)
-        intensidad = np.sqrt(intensidad)  # Atenuar máximos alejados mediante función raíz cuadrada
+        intensidad = np.sqrt(intensidad)
 
         fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
-        x_obs = fx * wavelength * L
-        extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
+        zoom_factor = 0.1  # acercar el patrón
+        extent = [-zoom_factor*N*dx*1e3/2, zoom_factor*N*dx*1e3/2, -zoom_factor*N*dx*1e3/2, zoom_factor*N*dx*1e3/2]
 
         fig, ax = plt.subplots(figsize=(6,6))
         ax.imshow(intensidad, cmap='inferno', extent=extent, vmin=0, vmax=0.1)
@@ -95,11 +95,11 @@ elif modo_principal == "Simulación de Difracción":
         U = np.fft.fftshift(np.fft.fft2(campo))
         intensidad = np.abs(U)**2
         intensidad /= np.max(intensidad)
-        intensidad = np.sqrt(intensidad)  # Atenuar máximos alejados mediante función raíz cuadrada
+        intensidad = np.sqrt(intensidad)
 
         fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
-        x_obs = fx * wavelength * L
-        extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
+        zoom_factor = 0.3  # acercar patrón rectangular en Fresnel
+        extent = [-zoom_factor*N*dx*1e3/2, zoom_factor*N*dx*1e3/2, -zoom_factor*N*dx*1e3/2, zoom_factor*N*dx*1e3/2]
 
         fig, ax = plt.subplots(figsize=(6,6))
         ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
@@ -107,5 +107,6 @@ elif modo_principal == "Simulación de Difracción":
         ax.set_ylabel("y (mm)")
         ax.set_title("Patrón de difracción 2D (Fresnel)")
         st.pyplot(fig)
+
 
 
