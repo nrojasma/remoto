@@ -146,44 +146,59 @@ elif modo_principal == "Simulación de Difracción":
 
         elif modo_dim == "2D":
                 N = 2048
-                dx = 5e-6  # 5 micras/píxel
+                dx = 5e-6
                 x = np.linspace(-N/2, N/2, N) * dx
                 X, Y = np.meshgrid(x, x)
                 R2 = X**2 + Y**2
 
-                # Parámetros
-                L = st.slider("Distancia a la pantalla (mm)", 50, 7000, 500, step=10) / 1000  # metros
+                L = st.slider("Distancia a la pantalla (mm)", 50, 7000, 500, step=10) / 1000
                 k = 2 * np.pi / wavelength
-
-                # Fase cuadrática de Fresnel
                 fase_cuadratica = np.exp(1j * (np.pi / (wavelength * L)) * (X**2 + Y**2))
 
                 if tipo_apertura == "Rectangular":
-                    st.subheader("Difracción de Fresnel 2D - Apertura Rectangular")
-                    apertura_x = st.slider("Ancho en X (µm)", 10, 2000, 200) * 1e-6
-                    apertura_y = st.slider("Ancho en Y (µm)", 10, 2000, 200) * 1e-6
-                    apertura = np.where((np.abs(X) < apertura_x/2) & (np.abs(Y) < apertura_y/2), 1, 0)
+                    st.subheader("Difracción de Fresnel 2D - Rendija Rectangular")
+
+                    ancho_rendija_um = st.slider("Ancho de la rendija (µm)", 10, 500, 50) * 1e-6
+
+                    # Rendija vertical (franjas horizontales)
+                    apertura = np.where(np.abs(Y) < ancho_rendija_um / 2, 1, 0)
+
+                    campo = apertura * fase_cuadratica
+                    U = np.fft.fftshift(np.fft.fft2(campo))
+                    intensidad = np.abs(U)**2
+                    intensidad /= np.max(intensidad)
+
+                    fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
+                    x_obs = fx * wavelength * L
+                    extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
+
+                    fig, ax = plt.subplots(figsize=(6,6))
+                    ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
+                    ax.set_xlabel("x (mm)")
+                    ax.set_ylabel("y (mm)")
+                    ax.set_title("Patrón de difracción 2D (Fresnel - Rendija Rectangular)")
+                    st.pyplot(fig)
+
                 else:
                     st.subheader("Difracción de Fresnel 2D - Apertura Circular")
+
                     radio = st.slider("Radio de apertura (mm)", 0.1, 5.0, 0.5, step=0.1) * 1e-3
                     apertura = np.where(R2 < radio**2, 1, 0)
 
-                # Campo difractado (FFT de apertura con fase cuadrática)
-                campo = apertura * fase_cuadratica
-                U = np.fft.fftshift(np.fft.fft2(campo))
-                intensidad = np.abs(U)**2
-                intensidad /= np.max(intensidad)
+                    campo = apertura * fase_cuadratica
+                    U = np.fft.fftshift(np.fft.fft2(campo))
+                    intensidad = np.abs(U)**2
+                    intensidad /= np.max(intensidad)
 
-                # Ejes en mm
-                fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
-                x_obs = fx * wavelength * L
-                extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
+                    fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
+                    x_obs = fx * wavelength * L
+                    extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
 
-                # Gráfica
-                fig, ax = plt.subplots(figsize=(6,6))
-                ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
-                ax.set_xlabel("x (mm)")
-                ax.set_ylabel("y (mm)")
-                ax.set_title("Patrón de difracción 2D (Fresnel)")
-                st.pyplot(fig)
+                    fig, ax = plt.subplots(figsize=(6,6))
+                    ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
+                    ax.set_xlabel("x (mm)")
+                    ax.set_ylabel("y (mm)")
+                    ax.set_title("Patrón de difracción 2D (Fresnel - Circular)")
+                    st.pyplot(fig)
+
 
