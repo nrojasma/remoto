@@ -151,41 +151,39 @@ elif modo_principal == "Simulación de Difracción":
                 X, Y = np.meshgrid(x, x)
                 R2 = X**2 + Y**2
 
-                L = st.slider("Distancia a la pantalla (mm)", 50, 7000, 500, step=10) / 1000
+                L = st.slider("Distancia a la pantalla (mm)", 500, 7000, 2000, step=10) / 1000
                 k = 2 * np.pi / wavelength
                 fase_cuadratica = np.exp(1j * (np.pi / (wavelength * L)) * (X**2 + Y**2))
 
                 if tipo_apertura == "Rectangular":
                     st.subheader("Difracción de Fresnel 2D - Abertura Rectangular Completa")
 
-                    # Lados del rectángulo (ej.: 1 mm y 4 mm)
+                    # Parámetros de abertura
                     lado_x_mm = st.slider("Lado en X (mm)", 0.1, 10.0, 1.0, step=0.1)
                     lado_y_mm = st.slider("Lado en Y (mm)", 0.1, 10.0, 4.0, step=0.1)
-                    ancho_x = (lado_x_mm / 2) * 1e-3  # metros
-                    ancho_y = (lado_y_mm / 2) * 1e-3  # metros
+                    lado_x = lado_x_mm * 1e-3
+                    lado_y = lado_y_mm * 1e-3
 
-                    # Abertura rectangular real
-                    apertura = np.where((np.abs(X) <= ancho_x) & (np.abs(Y) <= ancho_y), 1, 0)
+                    apertura = np.where((np.abs(X) <= lado_x/2) & (np.abs(Y) <= lado_y/2), 1, 0)
 
                     # Fase cuadrática
                     fase_cuadratica = np.exp(1j * (np.pi / (wavelength * L)) * (X**2 + Y**2))
 
-                    # Campo difractado
+                    # Campo difractado y cálculo intensidad
                     campo = apertura * fase_cuadratica
                     U = np.fft.fftshift(np.fft.fft2(campo))
-                    intensidad = np.abs(U)**2
-                    intensidad /= np.max(intensidad)
+                    I = np.abs(U)**2
+                    I /= np.max(I)
 
-                    # Ejes y visualización
-                    fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
-                    x_obs = fx * wavelength * L
-                    extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
+                    # Escala logarítmica para visualización
+                    I_log = np.log10(I + 1e-6)
 
+                    # Visualización
                     fig, ax = plt.subplots(figsize=(6,6))
-                    ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
-                    ax.set_xlabel("x (mm)")
-                    ax.set_ylabel("y (mm)")
-                    ax.set_title("Patrón de difracción 2D (Fresnel - Rectangular Completa)")
+                    ax.imshow(I_log, cmap='gray', extent=extent)
+                    ax.set_xlabel(\"x (mm)\")
+                    ax.set_ylabel(\"y (mm)\")
+                    ax.set_title(\"Patrón de difracción 2D (Fresnel - Rectangular Completa)\")
                     st.pyplot(fig)
 
                 else:
