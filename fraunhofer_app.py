@@ -3,12 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import fresnel
 
-st.set_page_config(page_title="Calculadora coeficientes de fresnel y difraccion", layout="wide")
-st.title("Calculadora de Fresnel y Simulador de Difracción")
+st.set_page_config(page_title="Simulador de Difracción y Fresnel", layout="wide")
+st.title("🔬 Calculadora de Fresnel y Simulador de Difracción 2D")
 
-# ------------------------ PAGINA PRINCIPAL ------------------------
-modo_principal = st.radio("Elije la opcion que deseas realizar", ["Calculadora de Coeficientes de Fresnel", "Simulación de Difracción"], horizontal=True)
+# ------------------ MODO PRINCIPAL ------------------
+modo_principal = st.radio("¿Qué deseas realizar?", ["Calculadora de Coeficientes de Fresnel", "Simulación de Difracción"], horizontal=True)
 
+# ------------------ CALCULADORA DE COEFICIENTES ------------------
 if modo_principal == "Calculadora de Coeficientes de Fresnel":
     st.subheader("Calculadora de Coeficientes de Fresnel")
 
@@ -17,15 +18,11 @@ if modo_principal == "Calculadora de Coeficientes de Fresnel":
     theta_i_deg = st.slider("Ángulo de incidencia (°)", 0.0, 90.0, 45.0)
     theta_i = np.radians(theta_i_deg)
 
-    # Ley de Snell
     sin_theta_t = n1 / n2 * np.sin(theta_i)
     if abs(sin_theta_t) <= 1:
         theta_t = np.arcsin(sin_theta_t)
-
-        # Coeficientes de reflexión y transmisión
         rs = (n1 * np.cos(theta_i) - n2 * np.cos(theta_t)) / (n1 * np.cos(theta_i) + n2 * np.cos(theta_t))
         rp = (n2 * np.cos(theta_i) - n1 * np.cos(theta_t)) / (n2 * np.cos(theta_i) + n1 * np.cos(theta_t))
-
         Rs = rs**2
         Rp = rp**2
         Ts = 1 - Rs
@@ -43,175 +40,83 @@ if modo_principal == "Calculadora de Coeficientes de Fresnel":
         ax.legend()
         st.pyplot(fig)
     else:
-        st.error("Condición de incidencia total interna: no hay transmisión.")
+        st.error("Incidencia total interna: no hay transmisión.")
 
+# ------------------ SIMULADOR DE DIFRACCIÓN ------------------
 elif modo_principal == "Simulación de Difracción":
-    # ------------------------ ELECCION GENERAL ------------------------
-    modo_dif = st.radio("Selecciona el tipo de difracción:", ["Fraunhofer", "Fresnel"], horizontal=True)
-    modo_dim = st.radio("Selecciona la visualización:", ["1D", "2D"], horizontal=True)
-
-    # ------------------------ ELECCION SECUNDARIA ------------------------
-    if modo_dim == "2D":
-        tipo_apertura = st.radio("Tipo de apertura para difracción 2D:", ["Rectangular", "Circular"], horizontal=True)
-
-    # ------------------------ PARÁMETROS COMUNES ------------------------
+    modo_dif = st.radio("Tipo de difracción:", ["Fraunhofer", "Fresnel"], horizontal=True)
+    tipo_apertura = st.radio("Tipo de apertura:", ["Rectangular", "Circular"], horizontal=True)
     wavelength = st.slider("Longitud de onda (nm)", 400, 700, 633) * 1e-9
-    L = st.slider("Distancia a la pantalla (cm)", 10, 200, 100) / 100
+    L = st.slider("Distancia a la pantalla (mm)", 100, 7000, 2000, step=10) / 1000
 
-    # ------------------------ DIFRACCIÓN DE FRAUNHOFER ------------------------
+    # Parámetros espaciales
+    N = 2048
+    dx = 5e-6
+    x = np.linspace(-N/2, N/2, N) * dx
+    X, Y = np.meshgrid(x, x)
+    R2 = X**2 + Y**2
+
+    # ------------------ DIFRACCIÓN DE FRAUNHOFER ------------------
     if modo_dif == "Fraunhofer":
-        st.subheader("Difracción de Fraunhofer")
+        st.subheader("Difracción de Fraunhofer 2D")
+        
+        if tipo_apertura == "Rectangular":
+            lado_x_mm = st.slider("Lado en X (mm)", 0.1, 10.0, 1.0, step=0.1)
+            lado_y_mm = st.slider("Lado en Y (mm)", 0.1, 10.0, 4.0, step=0.1)
+            lado_x = lado_x_mm * 1e-3
+            lado_y = lado_y_mm * 1e-3
+            apertura = np.where((np.abs(X) <= lado_x/2) & (np.abs(Y) <= lado_y/2), 1, 0)
+        else:
+            radio = st.slider("Radio de apertura (mm)", 0.1, 5.0, 0.5, step=0.1) * 1e-3
+            apertura = np.where(R2 < radio**2, 1, 0)
 
-        if modo_dim == "1D":
-            N = st.slider("Número de rendijas", 1, 10, 4)
-            a_um = st.slider("Separación entre rendijas a (µm)", 5, 50, 10)
-            b_um = st.slider("Ancho de rendija b (µm)", 1, 20, 2)
+        campo = np.fft.fftshift(np.fft.fft2(apertura))
+        intensidad = np.abs(campo)**2
+        intensidad /= np.max(intensidad)
+        intensidad_log = np.log10(intensidad + 1e-6)
 
-            a = a_um * 1e-6
-            b = b_um * 1e-6
+        fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
+        x_obs = fx * wavelength * L
+        extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
 
-            alpha = np.linspace(-6*np.pi, 6*np.pi, 5000)
-            theta = (alpha / np.pi) * (wavelength / a)
-            beta = (np.pi * b * theta) / wavelength
-            gamma = (np.pi * a * theta) / wavelength
+        fig, ax = plt.subplots(figsize=(6,6))
+        ax.imshow(intensidad_log, cmap='inferno', extent=extent)
+        ax.set_xlabel("x (mm)")
+        ax.set_ylabel("y (mm)")
+        ax.set_title("Patrón de difracción 2D (Fraunhofer)")
+        st.pyplot(fig)
 
-            beta[beta == 0] = 1e-20
-            gamma[gamma == 0] = 1e-20
-
-            I = (np.sin(beta) / beta)**2 * (np.sin(N * gamma) / np.sin(gamma))**2
-            I /= np.max(I)
-            envelope = (np.sin(beta) / beta)**2
-            envelope /= np.max(envelope)
-
-            fig, ax = plt.subplots()
-            ax.plot(alpha / np.pi, I * 16, 'r', label='Interferencia total')
-            ax.plot(alpha / np.pi, envelope * 16, 'b--', label='Envolvente')
-            ax.set_xlabel(r'$\alpha$ (rad) / $\pi$')
-            ax.set_ylabel(r'$I/I_0$')
-            ax.set_title("Patrón de difracción 1D")
-            ax.legend()
-            st.pyplot(fig)
-
-        elif modo_dim == "2D":
-            N = 2048  # Aumentar resolución
-            dx = 2e-6  # Mejorar detalle espacial
-            x = np.linspace(-N/2, N/2, N) * dx
-            X, Y = np.meshgrid(x, x)
-
-            if tipo_apertura == "Rectangular":
-                apertura_x = st.slider("Ancho en X (µm)", 10, 200, 100) * 1e-6
-                apertura_y = st.slider("Ancho en Y (µm)", 10, 200, 100) * 1e-6
-                apertura = np.where((np.abs(X) < apertura_x/2) & (np.abs(Y) < apertura_y/2), 1, 0)
-            else:
-                radio = st.slider("Radio de apertura (mm)", 0.1, 1.0, 0.5, step=0.01) * 1e-3
-                apertura = np.where(X**2 + Y**2 < radio**2, 1, 0)
-
-            campo = np.fft.fftshift(np.fft.fft2(apertura))
-            intensidad = np.abs(campo)**2
-            intensidad /= np.max(intensidad)
-
-            fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
-            x_obs = fx * wavelength * L
-            extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
-
-            fig, ax = plt.subplots(figsize=(6,6))
-            ax.imshow(intensidad, cmap='inferno', extent=extent, vmin=0, vmax=0.1)
-            ax.set_xlabel("x (mm)")
-            ax.set_ylabel("y (mm)")
-            ax.set_title("Patrón de difracción 2D (Fraunhofer)")
-            st.pyplot(fig)
-
-            
-
-    # ------------------------ DIFRACCIÓN DE FRESNEL ------------------------
+    # ------------------ DIFRACCIÓN DE FRESNEL ------------------
     elif modo_dif == "Fresnel":
-        st.subheader("Difracción de Fresnel")
+        st.subheader("Difracción de Fresnel 2D")
 
-        if modo_dim == "1D":
-            b_um = st.slider("Ancho de rendija b (µm)", 10, 200, 50)
-            b = b_um * 1e-6
+        fase_cuadratica = np.exp(1j * (np.pi / (wavelength * L)) * (X**2 + Y**2))
 
-            x = np.linspace(-5e-3, 5e-3, 1000)
-            s = np.sqrt(2 / (wavelength * L)) * x
-            S, C = fresnel(s)
-            I = (C**2 + S**2)
-            I /= np.max(I)
+        if tipo_apertura == "Rectangular":
+            lado_x_mm = st.slider("Lado en X (mm)", 0.1, 10.0, 1.0, step=0.1)
+            lado_y_mm = st.slider("Lado en Y (mm)", 0.1, 10.0, 4.0, step=0.1)
+            lado_x = lado_x_mm * 1e-3
+            lado_y = lado_y_mm * 1e-3
+            apertura = np.where((np.abs(X) <= lado_x/2) & (np.abs(Y) <= lado_y/2), 1, 0)
+        else:
+            radio = st.slider("Radio de apertura (mm)", 0.1, 5.0, 0.5, step=0.1) * 1e-3
+            apertura = np.where(R2 < radio**2, 1, 0)
 
-            fig, ax = plt.subplots()
-            ax.plot(x * 1e3, I, 'k')
-            ax.set_xlabel("x (mm)")
-            ax.set_ylabel("Intensidad (normalizada)")
-            ax.set_title("Difracción de Fresnel (ranura simple)")
-            st.pyplot(fig)
+        campo = apertura * fase_cuadratica
+        U = np.fft.fftshift(np.fft.fft2(campo))
+        intensidad = np.abs(U)**2
+        intensidad /= np.max(intensidad)
+        intensidad_log = np.log10(intensidad + 1e-6)
 
-        elif modo_dim == "2D":
-                N = 2048
-                dx = 5e-6
-                x = np.linspace(-N/2, N/2, N) * dx
-                X, Y = np.meshgrid(x, x)
-                R2 = X**2 + Y**2
+        fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
+        x_obs = fx * wavelength * L
+        extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
 
-                L = st.slider("Distancia a la pantalla (mm)", 500, 7000, 2000, step=10) / 1000
-                k = 2 * np.pi / wavelength
-                fase_cuadratica = np.exp(1j * (np.pi / (wavelength * L)) * (X**2 + Y**2))
-
-                if tipo_apertura == "Rectangular":
-                    st.subheader("Difracción de Fresnel 2D - Abertura Rectangular Completa")
-
-                    # Lados del rectángulo (en mm)
-                    lado_x_mm = st.slider("Lado en X (mm)", 0.1, 10.0, 1.0, step=0.1)
-                    lado_y_mm = st.slider("Lado en Y (mm)", 0.1, 10.0, 4.0, step=0.1)
-                    lado_x = lado_x_mm * 1e-3
-                    lado_y = lado_y_mm * 1e-3
-
-                    # Apertura rectangular
-                    apertura = np.where((np.abs(X) <= lado_x/2) & (np.abs(Y) <= lado_y/2), 1, 0)
-
-                    # Fase cuadrática
-                    fase_cuadratica = np.exp(1j * (np.pi / (wavelength * L)) * (X**2 + Y**2))
-
-                    # Campo difractado
-                    campo = apertura * fase_cuadratica
-                    U = np.fft.fftshift(np.fft.fft2(campo))
-                    intensidad = np.abs(U)**2
-                    intensidad /= np.max(intensidad)
-
-                    # Escala logarítmica para visualizar máximos secundarios
-                    intensidad_log = np.log10(intensidad + 1e-6)
-
-                    # Definir coordenadas físicas del patrón
-                    fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
-                    x_obs = fx * wavelength * L
-                    extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
-
-                    # Visualización
-                    fig, ax = plt.subplots(figsize=(6,6))
-                    ax.imshow(intensidad_log, cmap='gray', extent=extent)
-                    ax.set_xlabel("x (mm)")
-                    ax.set_ylabel("y (mm)")
-                    ax.set_title("Patrón de difracción 2D (Fresnel - Abertura Rectangular Completa)")
-                    st.pyplot(fig)
-
-                else:
-                    st.subheader("Difracción de Fresnel 2D - Apertura Circular")
-
-                    radio = st.slider("Radio de apertura (mm)", 0.1, 5.0, 0.5, step=0.1) * 1e-3
-                    apertura = np.where(R2 < radio**2, 1, 0)
-
-                    campo = apertura * fase_cuadratica
-                    U = np.fft.fftshift(np.fft.fft2(campo))
-                    intensidad = np.abs(U)**2
-                    intensidad /= np.max(intensidad)
-
-                    fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
-                    x_obs = fx * wavelength * L
-                    extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
-
-                    fig, ax = plt.subplots(figsize=(6,6))
-                    ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
-                    ax.set_xlabel("x (mm)")
-                    ax.set_ylabel("y (mm)")
-                    ax.set_title("Patrón de difracción 2D (Fresnel - Circular)")
-                    st.pyplot(fig)
+        fig, ax = plt.subplots(figsize=(6,6))
+        ax.imshow(intensidad_log, cmap='gray', extent=extent)
+        ax.set_xlabel("x (mm)")
+        ax.set_ylabel("y (mm)")
+        ax.set_title("Patrón de difracción 2D (Fresnel)")
+        st.pyplot(fig)
 
 
