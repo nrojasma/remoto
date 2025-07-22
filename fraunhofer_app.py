@@ -156,18 +156,27 @@ elif modo_principal == "Simulación de Difracción":
                 fase_cuadratica = np.exp(1j * (np.pi / (wavelength * L)) * (X**2 + Y**2))
 
                 if tipo_apertura == "Rectangular":
-                    st.subheader("Difracción de Fresnel 2D - Rendija Rectangular")
+                    st.subheader("Difracción de Fresnel 2D - Abertura Rectangular Completa")
 
-                    ancho_rendija_um = st.slider("Ancho de la rendija (µm)", 10, 500, 50) * 1e-6
+                    # Lados del rectángulo (ej.: 1 mm y 4 mm)
+                    lado_x_mm = st.slider("Lado en X (mm)", 0.1, 10.0, 1.0, step=0.1)
+                    lado_y_mm = st.slider("Lado en Y (mm)", 0.1, 10.0, 4.0, step=0.1)
+                    ancho_x = (lado_x_mm / 2) * 1e-3  # metros
+                    ancho_y = (lado_y_mm / 2) * 1e-3  # metros
 
-                    # Rendija vertical (franjas horizontales)
-                    apertura = np.where(np.abs(Y) < ancho_rendija_um / 2, 1, 0)
+                    # Abertura rectangular real
+                    apertura = np.where((np.abs(X) <= ancho_x) & (np.abs(Y) <= ancho_y), 1, 0)
 
+                    # Fase cuadrática
+                    fase_cuadratica = np.exp(1j * (np.pi / (wavelength * L)) * (X**2 + Y**2))
+
+                    # Campo difractado
                     campo = apertura * fase_cuadratica
                     U = np.fft.fftshift(np.fft.fft2(campo))
                     intensidad = np.abs(U)**2
                     intensidad /= np.max(intensidad)
 
+                    # Ejes y visualización
                     fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
                     x_obs = fx * wavelength * L
                     extent = [x_obs[0]*1e3, x_obs[-1]*1e3, x_obs[0]*1e3, x_obs[-1]*1e3]
@@ -176,7 +185,7 @@ elif modo_principal == "Simulación de Difracción":
                     ax.imshow(intensidad, cmap='gray', extent=extent, vmin=0, vmax=0.1)
                     ax.set_xlabel("x (mm)")
                     ax.set_ylabel("y (mm)")
-                    ax.set_title("Patrón de difracción 2D (Fresnel - Rendija Rectangular)")
+                    ax.set_title("Patrón de difracción 2D (Fresnel - Rectangular Completa)")
                     st.pyplot(fig)
 
                 else:
