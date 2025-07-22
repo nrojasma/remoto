@@ -98,7 +98,7 @@ elif modo_principal == "Simulación de Difracción":
         intensidad = np.sqrt(intensidad)
 
         fx = np.fft.fftshift(np.fft.fftfreq(N, d=dx))
-        zoom_factor = 0.3  # acercar patrón rectangular en Fresnel
+        zoom_factor = 0.05  # acercar patrón rectangular en Fresnel para mostrar pequeñas interferencias
         extent = [-zoom_factor*N*dx*1e3/2, zoom_factor*N*dx*1e3/2, -zoom_factor*N*dx*1e3/2, zoom_factor*N*dx*1e3/2]
 
         fig, ax = plt.subplots(figsize=(6,6))
