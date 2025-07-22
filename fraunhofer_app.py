@@ -181,9 +181,9 @@ elif modo_principal == "Simulación de Difracción":
                     # Visualización
                     fig, ax = plt.subplots(figsize=(6,6))
                     ax.imshow(I_log, cmap='gray', extent=extent)
-                    ax.set_xlabel(\"x (mm)\")
-                    ax.set_ylabel(\"y (mm)\")
-                    ax.set_title(\"Patrón de difracción 2D (Fresnel - Rectangular Completa)\")
+                    ax.set_xlabel("x (mm)")
+                    ax.set_ylabel("y (mm)")
+                    ax.set_title("Patrón de difracción 2D (Fresnel - Rectangular Completa)")
                     st.pyplot(fig)
 
                 else:
